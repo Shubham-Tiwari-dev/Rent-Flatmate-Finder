@@ -5,11 +5,23 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let _filename = '';
+let _dirname = '';
+
+if (typeof __filename !== 'undefined') {
+  _filename = __filename;
+} else if (typeof import.meta !== 'undefined' && import.meta.url) {
+  _filename = fileURLToPath(import.meta.url);
+}
+
+if (typeof __dirname !== 'undefined') {
+  _dirname = __dirname;
+} else {
+  _dirname = path.dirname(_filename);
+}
 
 // Load environment variables from the project's .env file using absolute path
-const mainEnvPath = path.resolve(__dirname, '../../.env');
+const mainEnvPath = path.resolve(_dirname, '../../.env');
 dotenv.config({ path: mainEnvPath });
 
 // Also check and load from process.cwd() .env file if it's different
