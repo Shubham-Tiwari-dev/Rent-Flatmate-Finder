@@ -1,0 +1,20 @@
+{
+  "users": [
+    {
+      "id": "admin-1",
+      "name": "Administrator",
+      "email": "admin@gmail.com",
+      "passwordHash": "$2b$10$qRh4vlT7wHgQBVvxpeMVd.yarZlPkqIRqh0KzPwxpiDNjoXXdLOxS",
+      "role": "Admin",
+      "isSuspended": false,
+      "createdAt": "2026-07-03T13:58:58.066Z"
+    }
+  ],
+  "listings": [],
+  "profiles": [],
+  "compatibilityScores": [],
+  "interestRequests": [],
+  "chats": [],
+  "messages": [],
+  "notifications": []
+}

@@ -811,3 +811,239 @@ export async function sendTenantAcceptanceEmail(
     console.error(`[Tenant Acceptance Email Error] Failed to send email to ${tenantEmail}:`, sendError);
   }
 }
+
+/**
+ * Send notification to Tenant when their interest request is declined by Owner
+ */
+export async function sendTenantDeclinedEmail(
+  tenantEmail: string,
+  tenantName: string,
+  listingTitle: string,
+  location: string,
+  rent: number,
+  ownerName: string
+) {
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+
+  if (!emailUser || !emailPass) {
+    console.error('[Tenant Declined Email Error] EMAIL_USER or EMAIL_PASS environment variables are not set.');
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: emailUser,
+      pass: emailPass,
+    },
+  });
+
+  try {
+    // Verify SMTP connection config before sending
+    await transporter.verify();
+  } catch (verifyError: any) {
+    console.error('[Tenant Declined Email Error] SMTP Transporter verification failed:', verifyError);
+    return;
+  }
+
+  const appUrl = process.env.APP_URL || 'http://localhost:3000';
+  const loginUrl = appUrl.endsWith('/') ? appUrl : `${appUrl}/`;
+
+  const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update on Your Room Request</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #f4f4f7;
+      color: #51545e;
+      margin: 0;
+      padding: 0;
+      width: 100% !important;
+      -webkit-text-size-adjust: none;
+    }
+    .email-wrapper {
+      width: 100%;
+      background-color: #f4f4f7;
+      margin: 0;
+      padding: 24px 0;
+    }
+    .email-content {
+      max-width: 570px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border: 1px solid #e8e8f1;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    .email-header {
+      background-color: #4f46e5;
+      padding: 32px;
+      text-align: center;
+    }
+    .logo-text {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      text-decoration: none;
+      margin: 0;
+    }
+    .info-banner {
+      background-color: #fee2e2;
+      color: #991b1b;
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      padding: 12px;
+      margin-bottom: 24px;
+    }
+    .email-body {
+      padding: 32px;
+    }
+    .greeting {
+      font-size: 20px;
+      color: #1f2937;
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-weight: bold;
+    }
+    .text-lead {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #4b5563;
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #1f2937;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 6px;
+    }
+    .detail-row {
+      margin-bottom: 8px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .detail-label {
+      font-weight: bold;
+      color: #374151;
+      display: inline-block;
+      width: 140px;
+    }
+    .detail-value {
+      color: #4b5563;
+    }
+    .button-container {
+      text-align: center;
+      margin: 32px 0;
+    }
+    .button {
+      background-color: #4f46e5;
+      color: #ffffff !important;
+      display: inline-block;
+      padding: 14px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+    }
+    .footer {
+      background-color: #f9fafb;
+      padding: 24px;
+      text-align: center;
+      border-top: 1px solid #f3f4f6;
+    }
+    .footer-text {
+      font-size: 13px;
+      color: #9ca3af;
+      margin: 0;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-content">
+      <!-- Header -->
+      <div class="email-header">
+        <h1 class="logo-text">RentMate</h1>
+      </div>
+
+      <!-- Info Banner -->
+      <div class="info-banner">
+        Update on Your Room Request
+      </div>
+
+      <!-- Body -->
+      <div class="email-body">
+        <p class="greeting">Hello ${tenantName},</p>
+        <p class="text-lead">Thank you for your interest in the room listed on RentMate.<br>Unfortunately, the owner has declined your request for the following listing.</p>
+
+        <div class="section-title">Listing Details</div>
+        <div class="detail-row">
+          <span class="detail-label">Title:</span>
+          <span class="detail-value">${listingTitle}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Location:</span>
+          <span class="detail-value">${location}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Monthly Rent:</span>
+          <span class="detail-value">₹${rent}</span>
+        </div>
+
+        <div class="section-title">Owner Details</div>
+        <div class="detail-row">
+          <span class="detail-label">Owner:</span>
+          <span class="detail-value">${ownerName}</span>
+        </div>
+
+        <p class="text-lead" style="margin-top: 24px;">Don't worry!<br>Many other room listings are available on RentMate that may better match your preferences.</p>
+        <p class="text-lead">Log in to continue exploring new rooms and compatible flatmates.</p>
+        <p class="text-lead">Thank you for choosing RentMate.</p>
+        
+        <p class="text-lead" style="margin-bottom: 0;">Regards,<br><strong>RentMate Team</strong></p>
+
+        <!-- Find More Rooms Button -->
+        <div class="button-container">
+          <a href="${loginUrl}" class="button" target="_blank">Find More Rooms</a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p class="footer-text">This is an automated notification from RentMate.</p>
+        <p class="footer-text" style="margin-top: 6px;">&copy; 2026 RentMate. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    const info = await transporter.sendMail({
+      from: emailUser,
+      to: tenantEmail,
+      subject: 'Update on Your Room Request',
+      html: htmlContent,
+    });
+    console.log(`Decline email sent successfully to ${tenantEmail}`);
+    console.log(`Nodemailer messageId: ${info.messageId}`);
+  } catch (sendError: any) {
+    console.error(`[Tenant Declined Email Error] Failed to send email to ${tenantEmail}:`, sendError);
+  }
+}

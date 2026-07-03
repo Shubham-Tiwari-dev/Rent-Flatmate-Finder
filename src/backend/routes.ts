@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { db, User, Listing, Profile } from './db.js';
 import { authenticateToken, AuthenticatedRequest, JWT_SECRET, requireRole } from './middleware.js';
 import { computeAICompatibility } from './gemini.js';
-import { notifyOwnerOfInterest, notifyTenantOfRequestUpdate, sendWelcomeEmail, sendTenantAcceptanceEmail } from './email.js';
+import { notifyOwnerOfInterest, notifyTenantOfRequestUpdate, sendWelcomeEmail, sendTenantAcceptanceEmail, sendTenantDeclinedEmail } from './email.js';
 
 const router = Router();
 
@@ -527,6 +527,21 @@ router.put('/interest/:id', authenticateToken, requireRole('Owner'), async (req:
           );
         } catch (emailErr) {
           console.error('[Tenant Acceptance Email Error]:', emailErr);
+        }
+      } else if (status === 'declined') {
+        try {
+          const ownerUser = await db.users.findById(listing.ownerId);
+          const ownerName = ownerUser ? ownerUser.name : 'Listing Owner';
+          await sendTenantDeclinedEmail(
+            tenantUser.email,
+            tenantUser.name,
+            listing.title,
+            listing.location,
+            listing.rent,
+            ownerName
+          );
+        } catch (emailErr) {
+          console.error('[Tenant Declined Email Error]:', emailErr);
         }
       } else {
         await notifyTenantOfRequestUpdate(
