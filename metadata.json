@@ -1,0 +1,6 @@
+{
+  "name": "Rent & Flatmate Finder",
+  "description": "A Room Rental & Flatmate Finder platform featuring AI compatibility scoring, real-time private chat, listing management, and tenant matching.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
