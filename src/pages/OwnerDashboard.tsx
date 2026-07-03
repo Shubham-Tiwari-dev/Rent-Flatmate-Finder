@@ -266,7 +266,7 @@ export const OwnerDashboard: React.FC = () => {
                           </div>
                           <div>
                             <p className="text-slate-400">Budget Limit</p>
-                            <p className="font-bold text-slate-700">${req.profile.budgetMin} - ${req.profile.budgetMax}/mo</p>
+                            <p className="font-bold text-slate-700">₹{req.profile.budgetMin} - ₹{req.profile.budgetMax}/mo</p>
                           </div>
                           <div>
                             <p className="text-slate-400">Room Preference</p>
