@@ -197,7 +197,7 @@ export const AdminDashboard: React.FC = () => {
                   <div key={l.id} className="flex items-center justify-between text-xs border-b border-slate-50 pb-2 mb-2">
                     <div>
                       <p className="font-bold text-slate-800">{l.title}</p>
-                      <p className="text-[10px] text-slate-400">{l.location} | Rent: ${l.rent}/mo</p>
+                      <p className="text-[10px] text-slate-400">{l.location} | Rent: ₹{l.rent}/mo</p>
                     </div>
                     <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 font-bold rounded">
                       {l.roomType}
