@@ -93,7 +93,7 @@ export const ListingModal: React.FC<ListingModalProps> = ({
             <div>
               <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Monthly Rent</p>
               <p className="text-2xl md:text-3xl font-black text-slate-800">
-                ${listing.rent}<span className="text-sm font-normal text-slate-500">/mo</span>
+                ₹{listing.rent}<span className="text-sm font-normal text-slate-500">/mo</span>
               </p>
             </div>
             <div className="text-right">
