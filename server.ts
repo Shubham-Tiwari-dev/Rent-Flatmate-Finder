@@ -8,6 +8,7 @@ import apiRouter from './src/backend/routes.js';
 import { db } from './src/backend/db.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { verifyTransporter } from './src/backend/email.js';
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,13 @@ async function startServer() {
     await db.init();
   } catch (err) {
     console.error('Database initialization failed:', err);
+  }
+
+  // Verify SMTP Transporter once on startup
+  try {
+    await verifyTransporter();
+  } catch (err) {
+    console.error('SMTP Transporter verification on startup failed:', err);
   }
 
   const app = express();

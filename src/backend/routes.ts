@@ -56,12 +56,10 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Send Welcome Email
-    try {
-      await sendWelcomeEmail(newUser.email, newUser.name, newUser.role);
-    } catch (emailErr) {
+    // Send Welcome Email asynchronously to return immediately
+    sendWelcomeEmail(newUser.email, newUser.name, newUser.role).catch(emailErr => {
       console.error('[Welcome Email registration error]:', emailErr);
-    }
+    });
 
     // Sign Token
     const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, {
@@ -447,23 +445,21 @@ router.post('/interest', authenticateToken, requireRole('Tenant'), async (req: A
         text: `Tenant ${tenantUser.name} is interested in your listing: "${listing.title}". Match score: ${score}%.`,
       });
 
-      // Send Email notifications if compatibility score is 40 or higher
+      // Send Email notifications asynchronously if compatibility score is 40 or higher
       if (score >= 40) {
-        try {
-          await notifyOwnerOfInterest(
-            ownerUser.email,
-            ownerUser.name,
-            listing.title,
-            listing.location,
-            listing.rent,
-            tenantUser.name,
-            tenantUser.email,
-            score,
-            savedScore?.explanation || 'No explanation provided.'
-          );
-        } catch (emailErr) {
+        notifyOwnerOfInterest(
+          ownerUser.email,
+          ownerUser.name,
+          listing.title,
+          listing.location,
+          listing.rent,
+          tenantUser.name,
+          tenantUser.email,
+          score,
+          savedScore?.explanation || 'No explanation provided.'
+        ).catch(emailErr => {
           console.error('[Owner Interest Notification Email Error]:', emailErr);
-        }
+        });
       }
     }
 
@@ -512,44 +508,48 @@ router.put('/interest/:id', authenticateToken, requireRole('Owner'), async (req:
         });
       }
 
-      // Send Email notification
+      // Send Email notification asynchronously so the API returns instantly
       if (status === 'accepted') {
-        try {
-          const ownerUser = await db.users.findById(listing.ownerId);
+        db.users.findById(listing.ownerId).then((ownerUser) => {
           const ownerName = ownerUser ? ownerUser.name : 'Listing Owner';
-          await sendTenantAcceptanceEmail(
+          sendTenantAcceptanceEmail(
             tenantUser.email,
             tenantUser.name,
             listing.title,
             listing.location,
             listing.rent,
             ownerName
-          );
-        } catch (emailErr) {
-          console.error('[Tenant Acceptance Email Error]:', emailErr);
-        }
+          ).catch((emailErr) => {
+            console.error('[Tenant Acceptance Email Error]:', emailErr);
+          });
+        }).catch((err) => {
+          console.error('[Tenant Acceptance Email Error fetching owner]:', err);
+        });
       } else if (status === 'declined') {
-        try {
-          const ownerUser = await db.users.findById(listing.ownerId);
+        db.users.findById(listing.ownerId).then((ownerUser) => {
           const ownerName = ownerUser ? ownerUser.name : 'Listing Owner';
-          await sendTenantDeclinedEmail(
+          sendTenantDeclinedEmail(
             tenantUser.email,
             tenantUser.name,
             listing.title,
             listing.location,
             listing.rent,
             ownerName
-          );
-        } catch (emailErr) {
-          console.error('[Tenant Declined Email Error]:', emailErr);
-        }
+          ).catch((emailErr) => {
+            console.error('[Tenant Declined Email Error]:', emailErr);
+          });
+        }).catch((err) => {
+          console.error('[Tenant Declined Email Error fetching owner]:', err);
+        });
       } else {
-        await notifyTenantOfRequestUpdate(
+        notifyTenantOfRequestUpdate(
           tenantUser.email,
           tenantUser.name,
           listing.title,
           status
-        );
+        ).catch((emailErr) => {
+          console.error('[Tenant Request Update Email Error]:', emailErr);
+        });
       }
     }
 

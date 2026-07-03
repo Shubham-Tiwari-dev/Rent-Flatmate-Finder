@@ -1,37 +1,48 @@
 import nodemailer from 'nodemailer';
 
 // Helper to get SMTP transporter if configured
-function getTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+const emailUser = process.env.EMAIL_USER;
+const emailPass = process.env.EMAIL_PASS;
 
-  if (host && user && pass) {
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
+export const transporter = emailUser && emailPass
+  ? nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // port 587 uses TLS, so secure must be false
+      requireTLS: true,
       auth: {
-        user,
-        pass,
+        user: emailUser,
+        pass: emailPass,
       },
-    });
+    })
+  : null;
+
+/**
+ * Verify transporter once on startup
+ */
+export async function verifyTransporter() {
+  if (transporter) {
+    try {
+      await transporter.verify();
+      console.log('[SMTP Transporter Success] SMTP Connection verified successfully on startup.');
+    } catch (err) {
+      console.error('[SMTP Transporter Error] SMTP Connection verification failed:', err);
+    }
+  } else {
+    console.warn('[SMTP Transporter Warning] EMAIL_USER or EMAIL_PASS not set. SMTP is disabled.');
   }
-  return null;
 }
 
 /**
  * Sends a notification email or logs it beautifully if SMTP is not configured
  */
 export async function sendEmail(to: string, subject: string, htmlContent: string) {
-  const transporter = getTransporter();
-  const fromAddress = process.env.SMTP_FROM || 'no-reply@rentflatmate.com';
+  const fromAddress = process.env.EMAIL_USER || process.env.SMTP_FROM || 'no-reply@rentflatmate.com';
 
   if (transporter) {
     try {
       await transporter.sendMail({
-        from: `"Rent & Flatmate Finder" <${fromAddress}>`,
+        from: `"RentMate" <${fromAddress}>`,
         to,
         subject,
         html: htmlContent,
@@ -70,28 +81,21 @@ export async function notifyOwnerOfInterest(
   explanation: string
 ) {
   const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
 
-  if (!emailUser || !emailPass) {
-    console.error('[Owner Notification Email Error] EMAIL_USER or EMAIL_PASS environment variables are not set.');
-    return;
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: emailUser,
-      pass: emailPass,
-    },
-  });
-
-  try {
-    // Verify SMTP connection config before sending
-    await transporter.verify();
-  } catch (verifyError: any) {
-    console.error('[Owner Notification Email Error] SMTP Transporter verification failed:', verifyError);
+  if (!transporter || !emailUser) {
+    console.warn('[Owner Interest Notification (Fallback)] Transporter not configured.');
+    console.log(`
+================================================================================
+[DEVELOPER OWNER INTEREST EMAIL LOG]
+--------------------------------------------------------------------------------
+To:      ${ownerEmail}
+Subject: 🏠 New Tenant Interested in Your Room
+Owner:   ${ownerName}
+Tenant:  ${tenantName} (${tenantEmail})
+Score:   ${compatibilityScore}
+Listing: ${listingTitle}
+================================================================================
+    `);
     return;
   }
 
@@ -301,16 +305,16 @@ export async function notifyOwnerOfInterest(
 </html>`;
 
   try {
-    const info = await transporter.sendMail({
-      from: emailUser,
+    const info = await transporter!.sendMail({
+      from: `"RentMate" <${emailUser}>`,
       to: ownerEmail,
       subject: '🏠 New Tenant Interested in Your Room',
       html: htmlContent,
     });
-    console.log(`Welcome email sent successfully to ${ownerEmail}`);
-    console.log(`Nodemailer messageId: ${info.messageId}`);
+    console.log(`Interest email sent successfully to ${ownerEmail}`);
+    console.log(`Nodemailer messageId: ${info?.messageId}`);
   } catch (sendError: any) {
-    console.error(`[Welcome Email Error] Failed to send email to ${ownerEmail}:`, sendError);
+    console.error(`[Owner Interest Email Error] Failed to send email to ${ownerEmail}:`, sendError);
   }
 }
 
@@ -352,28 +356,19 @@ export async function notifyTenantOfRequestUpdate(tenantEmail: string, tenantNam
  */
 export async function sendWelcomeEmail(toEmail: string, name: string, role: string) {
   const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
 
-  if (!emailUser || !emailPass) {
-    console.error('[Welcome Email Error] EMAIL_USER or EMAIL_PASS environment variables are not set.');
-    return;
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: emailUser,
-      pass: emailPass,
-    },
-  });
-
-  try {
-    // Verify SMTP connection config before sending
-    await transporter.verify();
-  } catch (verifyError: any) {
-    console.error('[Welcome Email Error] SMTP Transporter verification failed:', verifyError);
+  if (!transporter || !emailUser) {
+    console.warn('[Welcome Email Log (Fallback)] Transporter or EMAIL_USER not configured.');
+    console.log(`
+================================================================================
+[DEVELOPER WELCOME EMAIL LOG]
+--------------------------------------------------------------------------------
+To:      ${toEmail}
+Subject: 🎉 Welcome to RentMate
+Name:    ${name}
+Role:    ${role}
+================================================================================
+    `);
     return;
   }
 
@@ -564,14 +559,14 @@ export async function sendWelcomeEmail(toEmail: string, name: string, role: stri
 </html>`;
 
   try {
-    const info = await transporter.sendMail({
-      from: emailUser,
+    const info = await transporter!.sendMail({
+      from: `"RentMate" <${emailUser}>`,
       to: toEmail,
       subject: '🎉 Welcome to RentMate',
       html: htmlContent,
     });
     console.log(`Welcome email sent successfully to ${toEmail}`);
-    console.log(`Nodemailer messageId: ${info.messageId}`);
+    console.log(`Nodemailer messageId: ${info?.messageId}`);
   } catch (sendError: any) {
     console.error(`[Welcome Email Error] Failed to send welcome email to ${toEmail}:`, sendError);
   }
@@ -589,28 +584,19 @@ export async function sendTenantAcceptanceEmail(
   ownerName: string
 ) {
   const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
 
-  if (!emailUser || !emailPass) {
-    console.error('[Tenant Acceptance Email Error] EMAIL_USER or EMAIL_PASS environment variables are not set.');
-    return;
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: emailUser,
-      pass: emailPass,
-    },
-  });
-
-  try {
-    // Verify SMTP connection config before sending
-    await transporter.verify();
-  } catch (verifyError: any) {
-    console.error('[Tenant Acceptance Email Error] SMTP Transporter verification failed:', verifyError);
+  if (!transporter || !emailUser) {
+    console.warn('[Tenant Acceptance Email Log (Fallback)] Transporter or EMAIL_USER not configured.');
+    console.log(`
+================================================================================
+[DEVELOPER TENANT ACCEPTANCE EMAIL LOG]
+--------------------------------------------------------------------------------
+To:      ${tenantEmail}
+Subject: 🎉 Your Room Request Has Been Accepted
+Tenant:  ${tenantName}
+Listing: ${listingTitle}
+================================================================================
+    `);
     return;
   }
 
@@ -799,14 +785,14 @@ export async function sendTenantAcceptanceEmail(
 </html>`;
 
   try {
-    const info = await transporter.sendMail({
-      from: emailUser,
+    const info = await transporter!.sendMail({
+      from: `"RentMate" <${emailUser}>`,
       to: tenantEmail,
       subject: '🎉 Your Room Request Has Been Accepted',
       html: htmlContent,
     });
     console.log(`Acceptance email sent successfully to ${tenantEmail}`);
-    console.log(`Nodemailer messageId: ${info.messageId}`);
+    console.log(`Nodemailer messageId: ${info?.messageId}`);
   } catch (sendError: any) {
     console.error(`[Tenant Acceptance Email Error] Failed to send email to ${tenantEmail}:`, sendError);
   }
@@ -824,28 +810,19 @@ export async function sendTenantDeclinedEmail(
   ownerName: string
 ) {
   const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
 
-  if (!emailUser || !emailPass) {
-    console.error('[Tenant Declined Email Error] EMAIL_USER or EMAIL_PASS environment variables are not set.');
-    return;
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: emailUser,
-      pass: emailPass,
-    },
-  });
-
-  try {
-    // Verify SMTP connection config before sending
-    await transporter.verify();
-  } catch (verifyError: any) {
-    console.error('[Tenant Declined Email Error] SMTP Transporter verification failed:', verifyError);
+  if (!transporter || !emailUser) {
+    console.warn('[Tenant Declined Email Log (Fallback)] Transporter or EMAIL_USER not configured.');
+    console.log(`
+================================================================================
+[DEVELOPER TENANT DECLINED EMAIL LOG]
+--------------------------------------------------------------------------------
+To:      ${tenantEmail}
+Subject: Update on Your Room Request
+Tenant:  ${tenantName}
+Listing: ${listingTitle}
+================================================================================
+    `);
     return;
   }
 
@@ -1035,14 +1012,14 @@ export async function sendTenantDeclinedEmail(
 </html>`;
 
   try {
-    const info = await transporter.sendMail({
-      from: emailUser,
+    const info = await transporter!.sendMail({
+      from: `"RentMate" <${emailUser}>`,
       to: tenantEmail,
       subject: 'Update on Your Room Request',
       html: htmlContent,
     });
     console.log(`Decline email sent successfully to ${tenantEmail}`);
-    console.log(`Nodemailer messageId: ${info.messageId}`);
+    console.log(`Nodemailer messageId: ${info?.messageId}`);
   } catch (sendError: any) {
     console.error(`[Tenant Declined Email Error] Failed to send email to ${tenantEmail}:`, sendError);
   }
