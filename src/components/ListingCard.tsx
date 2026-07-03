@@ -60,7 +60,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, onClick, show
         
         {/* Rent tag */}
         <div className="absolute bottom-4 left-4 bg-slate-900/85 backdrop-blur-sm text-white px-3 py-1.5 rounded-2xl">
-          <span className="text-sm font-semibold tracking-tight">$</span>
+          <span className="text-sm font-semibold tracking-tight">₹</span>
           <span className="text-lg font-bold">{listing.rent}</span>
           <span className="text-[10px] text-slate-300">/mo</span>
         </div>
