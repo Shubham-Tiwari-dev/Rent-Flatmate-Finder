@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { db, User, Listing, Profile } from './db.js';
 import { authenticateToken, AuthenticatedRequest, JWT_SECRET, requireRole } from './middleware.js';
 import { computeAICompatibility } from './gemini.js';
-import { notifyOwnerOfInterest, notifyTenantOfRequestUpdate } from './email.js';
+import { notifyOwnerOfInterest, notifyTenantOfRequestUpdate, sendWelcomeEmail, sendTenantAcceptanceEmail } from './email.js';
 
 const router = Router();
 
@@ -54,6 +54,13 @@ router.post('/register', async (req, res) => {
         roomTypePreference: 'Any',
         bio: '',
       });
+    }
+
+    // Send Welcome Email
+    try {
+      await sendWelcomeEmail(newUser.email, newUser.name, newUser.role);
+    } catch (emailErr) {
+      console.error('[Welcome Email registration error]:', emailErr);
     }
 
     // Sign Token
@@ -440,14 +447,24 @@ router.post('/interest', authenticateToken, requireRole('Tenant'), async (req: A
         text: `Tenant ${tenantUser.name} is interested in your listing: "${listing.title}". Match score: ${score}%.`,
       });
 
-      // Send Email notifications
-      await notifyOwnerOfInterest(
-        ownerUser.email,
-        ownerUser.name,
-        listing.title,
-        tenantUser.name,
-        score
-      );
+      // Send Email notifications if compatibility score is 40 or higher
+      if (score >= 40) {
+        try {
+          await notifyOwnerOfInterest(
+            ownerUser.email,
+            ownerUser.name,
+            listing.title,
+            listing.location,
+            listing.rent,
+            tenantUser.name,
+            tenantUser.email,
+            score,
+            savedScore?.explanation || 'No explanation provided.'
+          );
+        } catch (emailErr) {
+          console.error('[Owner Interest Notification Email Error]:', emailErr);
+        }
+      }
     }
 
     res.status(201).json(request);
@@ -496,12 +513,29 @@ router.put('/interest/:id', authenticateToken, requireRole('Owner'), async (req:
       }
 
       // Send Email notification
-      await notifyTenantOfRequestUpdate(
-        tenantUser.email,
-        tenantUser.name,
-        listing.title,
-        status
-      );
+      if (status === 'accepted') {
+        try {
+          const ownerUser = await db.users.findById(listing.ownerId);
+          const ownerName = ownerUser ? ownerUser.name : 'Listing Owner';
+          await sendTenantAcceptanceEmail(
+            tenantUser.email,
+            tenantUser.name,
+            listing.title,
+            listing.location,
+            listing.rent,
+            ownerName
+          );
+        } catch (emailErr) {
+          console.error('[Tenant Acceptance Email Error]:', emailErr);
+        }
+      } else {
+        await notifyTenantOfRequestUpdate(
+          tenantUser.email,
+          tenantUser.name,
+          listing.title,
+          status
+        );
+      }
     }
 
     res.json(updatedRequest);
