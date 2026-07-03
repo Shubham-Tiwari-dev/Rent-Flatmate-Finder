@@ -291,7 +291,7 @@ export const AdminDashboard: React.FC = () => {
                         {l.roomType}
                       </span>
                     </td>
-                    <td className="p-4 font-bold text-slate-700">${l.rent}/mo</td>
+                    <td className="p-4 font-bold text-slate-700">₹{l.rent}/mo</td>
                     <td className="p-4 text-slate-400">
                       {new Date(l.createdAt).toLocaleDateString()}
                     </td>
