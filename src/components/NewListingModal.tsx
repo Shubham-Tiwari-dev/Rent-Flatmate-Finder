@@ -127,7 +127,7 @@ export const NewListingModal: React.FC<NewListingModalProps> = ({ onClose, onLis
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Monthly Rent ($)*</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Monthly Rent (₹)*</label>
               <input
                 required
                 type="number"
