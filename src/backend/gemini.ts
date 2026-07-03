@@ -88,11 +88,11 @@ export function calculateFallbackScore(listing: Listing, profile: Profile): { sc
   // Dynamic explanation generation
   let explanation = '';
   if (finalScore >= 80) {
-    explanation = `Excellent match! Budget is within range ($${listing.rent}/mo vs budget up to $${profile.budgetMax}/mo) and location matches '${profile.preferredLocation}'. Availability dates are highly compatible.`;
+    explanation = `Excellent match! Budget is within range (₹${listing.rent}/mo vs budget up to ₹${profile.budgetMax}/mo) and location matches '${profile.preferredLocation}'. Availability dates are highly compatible.`;
   } else if (finalScore >= 60) {
     explanation = `Good compatibility. There is some minor variance in budget or preferred room type (${listing.roomType} listed vs ${profile.roomTypePreference} preferred), but location is a solid match.`;
   } else {
-    explanation = `Moderate match. The rent is $${listing.rent}/mo, which might be outside or at the absolute limit of your preferred $${profile.budgetMin}-$${profile.budgetMax}/mo range, or the location details have partial compatibility.`;
+    explanation = `Moderate match. The rent is ₹${listing.rent}/mo, which might be outside or at the absolute limit of your preferred ₹${profile.budgetMin}-₹${profile.budgetMax}/mo range, or the location details have partial compatibility.`;
   }
 
   return {
