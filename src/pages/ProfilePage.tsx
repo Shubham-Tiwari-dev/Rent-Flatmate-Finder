@@ -102,7 +102,7 @@ export const ProfilePage: React.FC = () => {
           {/* Budget Min & Max */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Minimum Budget ($/mo)</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Minimum Budget (₹/mo)</label>
               <input
                 required
                 type="number"
@@ -115,7 +115,7 @@ export const ProfilePage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Maximum Budget ($/mo)</label>
+              <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Maximum Budget (₹/mo)</label>
               <input
                 required
                 type="number"
