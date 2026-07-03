@@ -12,7 +12,7 @@ import rateLimit from 'express-rate-limit';
 // Load environment variables
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 async function startServer() {
   // Initialize Neon database or local JSON database
