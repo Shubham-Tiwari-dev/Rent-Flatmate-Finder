@@ -172,7 +172,7 @@ export const TenantDashboard: React.FC<TenantDashboardProps> = ({ setCurrentPage
           
           {/* Budget */}
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Max Budget ($)</label>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Max Budget (₹)</label>
             <input
               type="number"
               name="maxBudget"
